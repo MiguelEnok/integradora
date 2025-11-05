@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import DwvComponent from './DwvComponent.jsx';
+import DicomUploaderPage from './pages/DicomUploaderPage';
 
 function App() {
+  const [currentView, setCurrentView] = useState('list');
 
-  //función para cambiar de vista (pasada a DicomStudiesList)
   const setView = (view) => {
     setCurrentView(view);
   };
@@ -20,7 +21,7 @@ function App() {
           Lista de Estudios
         </button>
 
-        <button onClick={() => alert('Funcionalidad en desarrollo')} style={{ margin: '0 10px' }}>
+        <button onClick={() => setView('uploader')} style={{ margin: '0 10px' }}>
           Subir Nuevo Estudio (Create)
         </button>
 
@@ -31,8 +32,11 @@ function App() {
       </nav>
 
       <main style={{ padding: '20px' }}>
-        <DwvComponent />
+        {currentView === 'uploader' && <DicomUploaderPage />}
 
+        {currentView === 'viewer' && (
+          <DwvComponent />
+        )}
       </main>
 
     </div>
