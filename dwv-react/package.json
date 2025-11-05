@@ -10,7 +10,8 @@
     "dwv": "0.35.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-router-dom": "^7.9.3"
+    "react-router-dom": "^7.9.3",
+    "supabase": "^2.54.11"
   },
   "devDependencies": {
     "@emotion/react": "^11.14.0",
