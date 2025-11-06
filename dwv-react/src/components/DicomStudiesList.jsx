@@ -6,23 +6,23 @@ const tableCellStyle = { border: '1px solid #ddd', padding: '10px' };
 
 const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    
+
     const date = new Date(dateString);
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
 
-    const isSameDay = (d1, d2) => 
+    const isSameDay = (d1, d2) =>
         d1.getFullYear() === d2.getFullYear() &&
         d1.getMonth() === d2.getMonth() &&
         d1.getDate() === d2.getDate();
 
     const timeOptions = { hour: '2-digit', minute: '2-digit' };
-    
+
     if (isSameDay(date, today)) {
         return "Hoy";
     }
-    
+
     if (isSameDay(date, yesterday)) {
         return "Ayer";
     }
@@ -31,11 +31,11 @@ const formatDate = (dateString) => {
     return date.toLocaleDateString(undefined, fullDateOptions);
 };
 
-const DicomStudiesList = ({ onSelectStudy, setView }) => {
+const DicomStudiesList = ({ onSelectStudy, setView, onEditStudy}) => {
     const [studies, setStudies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
+
     const [searchTerm, setSearchTerm] = useState('');
     const [timeFilter, setTimeFilter] = useState('all');
 
@@ -49,7 +49,7 @@ const DicomStudiesList = ({ onSelectStudy, setView }) => {
             .order('created_at', { ascending: false });
 
         const now = new Date();
-        
+
         if (timeFilter === 'today') {
             const startOfDay = new Date(now).setHours(0, 0, 0, 0);
             query = query.gte('created_at', new Date(startOfDay).toISOString());
@@ -64,9 +64,9 @@ const DicomStudiesList = ({ onSelectStudy, setView }) => {
         }
 
         if (searchTerm) {
-            query = query.ilike( 'name', `%${searchTerm}%`);
+            query = query.ilike('name', `%${searchTerm}%`);
         }
-        
+
         const { data, error } = await query;
 
         if (error) {
@@ -88,22 +88,22 @@ const DicomStudiesList = ({ onSelectStudy, setView }) => {
             fetchStudies();
         }
     };
-    
+
     useEffect(() => {
         fetchStudies();
-    }, [timeFilter]); 
-    
+    }, [timeFilter]);
+
     const handleDelete = async (id, storagePath) => {
         if (!window.confirm('¿Estás seguro de eliminar este estudio? Esto es permanente.')) {
-             return;
+            return;
         }
-        
+
         const { error: storageError } = await supabase.storage.from('studies').remove([storagePath]);
         if (storageError) { setError('Error al eliminar archivo de Storage.'); return; }
-        
+
         const { error: dbError } = await supabase.from('dicom_studies').delete().eq('id', id);
         if (dbError) { setError('Error al eliminar registro de la base de datos.'); return; }
-        
+
         setStudies(studies.filter(study => study.id !== id));
         alert('Estudio eliminado con éxito.');
     };
@@ -113,20 +113,26 @@ const DicomStudiesList = ({ onSelectStudy, setView }) => {
         window.open(data.publicUrl, '_blank');
         alert(`Iniciando descarga de ${fileName}.`);
     };
-    
+
     if (loading) return <p>Cargando estudios...</p>;
     if (error) return <p style={{ color: 'red' }}>{error}</p>;
+
+    const clickableCellStyle = {
+        ...tableCellStyle,
+        cursor: 'pointer',
+        color: '#000000ff'
+    };
 
     return (
         <div style={{ marginTop: '20px' }}>
             <h2>Estudios Guardados ({studies.length})</h2>
 
             <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', alignItems: 'center' }}>
-                
+
                 <label>Filtrar por Fecha:</label>
-                <select 
-                    value={timeFilter} 
-                    onChange={(e) => setTimeFilter(e.target.value)} 
+                <select
+                    value={timeFilter}
+                    onChange={(e) => setTimeFilter(e.target.value)}
                     style={{ padding: '8px', border: '1px solid #ccc' }}
                 >
                     <option value="all">Mostrar Todos</option>
@@ -141,11 +147,11 @@ const DicomStudiesList = ({ onSelectStudy, setView }) => {
                         placeholder={'Buscar paciente'}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        onKeyDown={handleKeyDown} 
+                        onKeyDown={handleKeyDown}
                         style={{ padding: '8px', border: 'none', flexGrow: 1 }}
                     />
-                    <button 
-                        onClick={handleSearch} 
+                    <button
+                        onClick={handleSearch}
                         style={{ padding: '8px 12px', background: '#d3d3d3ff', color: 'white', border: 'none', cursor: 'pointer' }}
                     >
                         🔍
@@ -154,7 +160,7 @@ const DicomStudiesList = ({ onSelectStudy, setView }) => {
             </div>
 
             {studies.length === 0 ? (
-                 <p>No se encontraron estudios con los criterios de búsqueda/filtro actuales.</p>
+                <p>No se encontraron estudios con los criterios de búsqueda/filtro actuales.</p>
             ) : (
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
@@ -163,15 +169,19 @@ const DicomStudiesList = ({ onSelectStudy, setView }) => {
                             <th style={tableHeaderStyle}>Paciente</th>
                             <th style={tableHeaderStyle}>Descripción</th>
                             <th style={tableHeaderStyle}>Acciones</th>
-                            <th style={tableHeaderStyle}>Fecha de Carga</th> 
+                            <th style={tableHeaderStyle}>Fecha de Carga</th>
                         </tr>
                     </thead>
                     <tbody>
                         {studies.map((study) => (
                             <tr key={study.id}>
                                 <td style={tableCellStyle}>{study.id}</td>
-                                <td style={tableCellStyle}>{study.name}</td>
-                                <td style={tableCellStyle}>{study.description}</td>
+                                <td style={clickableCellStyle} onClick={() => onEditStudy(study)}>
+                                    {study.name}
+                                </td>
+                                <td style={clickableCellStyle} onClick={() => onEditStudy(study)}>
+                                    {study.description}
+                                </td>
                                 <td style={tableCellStyle}>
                                     <button
                                         onClick={() => handleDownload(study.storage_path, study.file_name)}

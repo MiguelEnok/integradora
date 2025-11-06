@@ -1,17 +1,38 @@
 import React, { useState } from 'react';
 import DwvComponent from './DwvComponent.jsx';
 import DicomUploaderPage from './pages/DicomUploaderPage';
+import DicomFormPage from './pages/DicomUpdateForm.jsx';
 import DicomStudiesList from './components/DicomStudiesList.jsx';
 
 function App() {
   const [currentView, setCurrentView] = useState('list');
+  const [studyToEdit, setStudyToEdit] = useState(null);
 
   React.useEffect(() => {
-    setCurrentView('list');
+    if (!currentView) {
+      setCurrentView('list');
+    }
   }, []);
 
   const setView = (view) => {
     setCurrentView(view);
+
+    if (view !== 'uploader') {
+      setStudyToEdit(null);
+    }
+  };
+
+  const handleSelectStudy = (url) => {
+    setView('viewer');
+  };
+
+  const startEditing = (study) => {
+    setStudyToEdit(study);
+    setCurrentView('update');
+  };
+  const onOperationComplete = () => {
+    setStudyToEdit(null);
+    setCurrentView('list');
   };
 
   return (
@@ -39,13 +60,26 @@ function App() {
       <main style={{ padding: '20px' }}>
         {currentView === 'uploader' && <DicomUploaderPage />}
 
+        {currentView === 'update' && (
+          <DicomFormPage
+            studyToEdit={studyToEdit}
+            onComplete={onOperationComplete}
+            setView={setView}
+          />
+        )}
+
+        {currentView === 'list' && (
+          <DicomStudiesList
+            onSelectStudy={handleSelectStudy}
+            setView={setView}
+            onEditStudy={startEditing}
+          />
+        )}
+
         {currentView === 'viewer' && (
           <DwvComponent />
         )}
 
-        {currentView === 'list' && (
-          <DicomStudiesList />
-        )}
       </main>
 
     </div>
