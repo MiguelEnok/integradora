@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import DwvComponent from './DwvComponent.jsx';
 import DicomUploaderPage from './pages/DicomUploaderPage';
+import DicomStudiesList from './components/DicomStudiesList.jsx';
 
 function App() {
   const [currentView, setCurrentView] = useState('list');
+
+  React.useEffect(() => {
+    setCurrentView('list');
+  }, []);
 
   const setView = (view) => {
     setCurrentView(view);
@@ -17,7 +22,7 @@ function App() {
 
       <nav style={{ background: '#f0f0f0', padding: '10px', borderBottom: '1px solid #ccc' }}>
 
-        <button onClick={() => alert('Funcionalidad en desarrollo')} style={{ margin: '0 10px' }}>
+        <button onClick={() => setView('list')} style={{ margin: '0 10px' }}>
           Lista de Estudios
         </button>
 
@@ -36,6 +41,10 @@ function App() {
 
         {currentView === 'viewer' && (
           <DwvComponent />
+        )}
+
+        {currentView === 'list' && (
+          <DicomStudiesList />
         )}
       </main>
 
