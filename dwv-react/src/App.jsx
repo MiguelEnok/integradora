@@ -1,12 +1,38 @@
 import React, { useState } from 'react';
 import DwvComponent from './DwvComponent.jsx';
 import DicomUploaderPage from './pages/DicomUploaderPage';
+import DicomFormPage from './pages/DicomUpdateForm.jsx';
+import DicomStudiesList from './components/DicomStudiesList.jsx';
 
 function App() {
   const [currentView, setCurrentView] = useState('list');
+  const [studyToEdit, setStudyToEdit] = useState(null);
+
+  React.useEffect(() => {
+    if (!currentView) {
+      setCurrentView('list');
+    }
+  }, []);
 
   const setView = (view) => {
     setCurrentView(view);
+
+    if (view !== 'uploader') {
+      setStudyToEdit(null);
+    }
+  };
+
+  const handleSelectStudy = (url) => {
+    setView('viewer');
+  };
+
+  const startEditing = (study) => {
+    setStudyToEdit(study);
+    setCurrentView('update');
+  };
+  const onOperationComplete = () => {
+    setStudyToEdit(null);
+    setCurrentView('list');
   };
 
   return (
@@ -17,7 +43,7 @@ function App() {
 
       <nav style={{ background: '#f0f0f0', padding: '10px', borderBottom: '1px solid #ccc' }}>
 
-        <button onClick={() => alert('Funcionalidad en desarrollo')} style={{ margin: '0 10px' }}>
+        <button onClick={() => setView('list')} style={{ margin: '0 10px' }}>
           Lista de Estudios
         </button>
 
@@ -32,11 +58,32 @@ function App() {
       </nav>
 
       <main style={{ padding: '20px' }}>
-        {currentView === 'uploader' && <DicomUploaderPage />}
+        {currentView === 'uploader' && 
+          <DicomUploaderPage 
+            setView={setView}
+          />
+        }
+
+        {currentView === 'update' && (
+          <DicomFormPage
+            studyToEdit={studyToEdit}
+            onComplete={onOperationComplete}
+            setView={setView}
+          />
+        )}
+
+        {currentView === 'list' && (
+          <DicomStudiesList
+            onSelectStudy={handleSelectStudy}
+            setView={setView}
+            onEditStudy={startEditing}
+          />
+        )}
 
         {currentView === 'viewer' && (
           <DwvComponent />
         )}
+
       </main>
 
     </div>
