@@ -58,7 +58,11 @@ function App() {
       </nav>
 
       <main style={{ padding: '20px' }}>
-        {currentView === 'uploader' && <DicomUploaderPage />}
+        {currentView === 'uploader' && 
+          <DicomUploaderPage 
+            setView={setView}
+          />
+        }
 
         {currentView === 'update' && (
           <DicomFormPage

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 
-const DicomUploaderPage = () => {
+const DicomUploaderPage = ({setView}) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [dicomFile, setDicomFile] = useState(null);
@@ -80,6 +80,11 @@ const DicomUploaderPage = () => {
     }
   };
 
+  const handleCancel = () => {
+    setView('list');
+    onComplete();
+  };
+
   return (
     <div style={{ padding: '20px', maxWidth: '600px', margin: 'auto' }}>
       <h1>Agregar Nuevo Estudio DICOM (Supabase)</h1>
@@ -100,6 +105,14 @@ const DicomUploaderPage = () => {
         <button type="submit" disabled={loading || !dicomFile} style={{ padding: '10px 20px', cursor: loading ? 'not-allowed' : 'pointer' }}>
           {loading ? 'Procesando...' : 'Guardar Estudio'}
         </button>
+
+        <button
+            type="button"
+            onClick={handleCancel}
+            style={{ padding: '10px 20px', background: '#dc3545', color: 'white', border: 'none' }}
+          >
+            Cancelar
+          </button>
 
       </form>
     </div>
