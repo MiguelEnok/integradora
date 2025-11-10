@@ -1,8 +1,32 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-const tableHeaderStyle = { border: '1px solid #ddd', padding: '10px', textAlign: 'left' };
-const tableCellStyle = { border: '1px solid #ddd', padding: '10px' };
+const PRIMARY_COLOR = '#115e67';
+const DELETE_COLOR = '#dc3545';
+const DOWNLOAD_COLOR = '#28a745';
+const TEXT_PRIMARY = '#333';
+
+const tableHeaderStyle = {
+    padding: '12px 15px',
+    textAlign: 'left',
+    color: '#333',
+    fontWeight: '600',
+    fontSize: '14px',
+    borderBottom: '2px solid #e0e0e0', // Solo borde inferior
+};
+const tableCellStyle = {
+    padding: '15px',
+    fontSize: '14px',
+    color: '#111111ff',
+    borderBottom: '1px solid #f0f0f0',
+};
+const cardStyle = {
+    background: 'white',
+    borderRadius: '8px',
+    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.05)',
+    padding: '30px',
+};
+
 
 const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -31,7 +55,7 @@ const formatDate = (dateString) => {
     return date.toLocaleDateString(undefined, fullDateOptions);
 };
 
-const DicomStudiesList = ({ onSelectStudy, setView, onEditStudy}) => {
+const DicomStudiesList = ({ onSelectStudy, setView, onEditStudy }) => {
     const [studies, setStudies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -114,90 +138,170 @@ const DicomStudiesList = ({ onSelectStudy, setView, onEditStudy}) => {
         alert(`Iniciando descarga de ${fileName}.`);
     };
 
-    if (loading) return <p>Cargando estudios...</p>;
-    if (error) return <p style={{ color: 'red' }}>{error}</p>;
+    if (loading) return <div style={{ padding: '20px', textAlign: 'center' }}>Cargando estudios...</div>;
+    if (error) return <p style={{ color: DELETE_COLOR, padding: '20px' }}>{error}</p>;
 
     const clickableCellStyle = {
         ...tableCellStyle,
         cursor: 'pointer',
-        color: '#000000ff'
+        color: PRIMARY_COLOR, // Resaltar para indicar que es clicable
+        fontWeight: '500',
     };
 
     return (
-        <div style={{ marginTop: '20px' }}>
-            <h2>Estudios Guardados ({studies.length})</h2>
+        <div style={{ marginTop: '0' }}>
 
-            <div style={{ display: 'flex', gap: '20px', marginBottom: '20px', alignItems: 'center' }}>
+            {/* Título Principal */}
+            <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#333', marginBottom: '30px' }}>
+                Lista de pacientes
+            </h2>
 
-                <label>Filtrar por Fecha:</label>
+            <div style={{
+                display: 'flex',
+                marginBottom: '20px',
+                alignItems: 'center',
+                gap: '15px'
+            }}>
+
+                <span>Filtrar por fecha:</span>
                 <select
                     value={timeFilter}
                     onChange={(e) => setTimeFilter(e.target.value)}
-                    style={{ padding: '8px', border: '1px solid #ccc' }}
+                    style={{
+                        padding: '10px 15px',
+                        border: '1px solid #ccc',
+                        borderRadius: '6px',
+                        background: 'white',
+                        fontSize: '14px',
+                        appearance: 'none', // Quita el estilo nativo para que se vea más limpio
+                        paddingRight: '30px', // Espacio para el icono de flecha
+                    }}
                 >
-                    <option value="all">Mostrar Todos</option>
+                    <option value="all">Mostrar todos</option>
                     <option value="today">Hoy</option>
                     <option value="week">Última Semana</option>
                     <option value="month">Último Mes</option>
                 </select>
-
-                <div style={{ display: 'flow', border: '1px solid #ccc', borderRadius: '4px', overflow: 'hidden' }}>
+                {/* Barra de Búsqueda */}
+                <div style={{
+                    display: 'flex',
+                    marginLeft: 'auto',
+                    flex: 1,
+                    maxWidth: '400px',
+                    border: '1px solid #ccc',
+                    borderRadius: '6px',
+                    overflow: 'hidden',
+                    background: 'white'
+                }}>
                     <input
                         type="text"
-                        placeholder={'Buscar paciente'}
+                        placeholder={'Buscar paciente...'}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        style={{ padding: '8px', border: 'none', flexGrow: 1 }}
+                        style={{ padding: '10px 15px', border: 'none', flexGrow: 1, fontSize: '14px' }}
                     />
                     <button
                         onClick={handleSearch}
-                        style={{ padding: '8px 12px', background: '#d3d3d3ff', color: 'white', border: 'none', cursor: 'pointer' }}
+                        style={{ padding: '10px 12px', background: 'transparent', color: '#666', border: 'none', cursor: 'pointer' }}
                     >
-                        🔍
+                        <img
+                            src="/src/assets/iconSearch.svg"
+                            alt="Buscar"
+                            style={{
+                                verticalAlign: 'middle',
+                                marginRight: '5px',
+                                width: '16px',
+                                height: '16px'
+                            }}
+                        />
                     </button>
                 </div>
+
+
             </div>
+            {/* ---------------------------------------------------- */}
 
             {studies.length === 0 ? (
-                <p>No se encontraron estudios con los criterios de búsqueda/filtro actuales.</p>
+                <p style={{ ...cardStyle, textAlign: 'center' }}>
+                    No se encontraron estudios con los criterios de búsqueda/filtro actuales.
+                </p>
             ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                        <tr style={{ background: '#f2f2f2' }}>
-                            <th style={tableHeaderStyle}>ID</th>
-                            <th style={tableHeaderStyle}>Paciente</th>
-                            <th style={tableHeaderStyle}>Descripción</th>
-                            <th style={tableHeaderStyle}>Acciones</th>
-                            <th style={tableHeaderStyle}>Fecha de Carga</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {studies.map((study) => (
-                            <tr key={study.id}>
-                                <td style={tableCellStyle}>{study.id}</td>
-                                <td style={clickableCellStyle} onClick={() => onEditStudy(study)}>
-                                    {study.name}
-                                </td>
-                                <td style={clickableCellStyle} onClick={() => onEditStudy(study)}>
-                                    {study.description}
-                                </td>
-                                <td style={tableCellStyle}>
-                                    <button
-                                        onClick={() => handleDownload(study.storage_path, study.file_name)}
-                                        style={{ marginRight: '10px', background: '#28a745', color: 'white' }}
-                                    >
-                                        Descargar Imagen
-                                    </button>
-                                    <button onClick={() => handleDelete(study.id, study.storage_path)} style={{ background: 'red', color: 'white' }}>
-                                        Eliminar
-                                    </button>
-                                </td>
-                                <td style={tableCellStyle}>{formatDate(study.created_at)}</td>
+                <div style={cardStyle}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                            <tr style={{ background: 'white' }}>
+                                <th style={tableHeaderStyle}>Paciente</th>
+                                <th style={tableHeaderStyle}>Descripción</th>
+                                <th style={tableHeaderStyle}>Fecha</th>
+                                <th style={tableHeaderStyle}>Acción</th>
+                                {/* Eliminamos ID para simplificar la tabla visualmente, si quieres mantenerlo, agrégalo aquí */}
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {studies.map((study) => (
+                                <tr
+                                    key={study.id}
+                                    style={{ transition: 'background-color 0.2s', ':hover': { backgroundColor: '#2c5363ff' } }}
+                                >
+                                    <td style={{ ...clickableCellStyle, color: TEXT_PRIMARY, fontWeight: '600' }} onClick={() => onEditStudy(study)}>
+                                        {study.name}
+                                    </td>
+                                    {/* Descripción (Clicable para edición) */}
+                                    <td style={clickableCellStyle} onClick={() => onEditStudy(study)}>
+                                        {study.description}
+                                    </td>
+                                    {/* Fecha */}
+                                    <td style={{ tableCellStyle, cursor: 'pointer' }} onClick={() => onEditStudy(study)}>{formatDate(study.created_at)}</td>
+
+                                    {/* Acciones */}
+                                    <td style={tableCellStyle}>
+                                        {/* Botón Descargar (Icono + Texto) */}
+                                        <button
+                                            onClick={() => handleDownload(study.storage_path, study.file_name)}
+                                            style={{
+                                                marginRight: '15px',
+                                                background: 'transparent',
+                                                color: PRIMARY_COLOR, // Icono de descarga visible
+                                                border: 'none',
+                                                fontSize: '14px',
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            <img
+                                                src="/src/assets/iconDownload.svg"
+                                                alt="Descargar"
+                                                style={{
+                                                    verticalAlign: 'middle',
+                                                    marginRight: '5px',
+                                                    width: '16px',
+                                                    height: '16px'
+                                                }}
+                                            />
+                                            Descargar
+                                        </button>
+
+                                        {/* Botón Eliminar */}
+                                        <button
+                                            onClick={() => handleDelete(study.id, study.storage_path)}
+                                            style={{
+                                                background: DELETE_COLOR,
+                                                color: 'white',
+                                                padding: '6px 12px',
+                                                borderRadius: '4px',
+                                                border: 'none',
+                                                fontSize: '14px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            Eliminar
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             )}
         </div>
     );
