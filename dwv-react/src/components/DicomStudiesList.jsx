@@ -269,7 +269,7 @@ const DicomStudiesList = ({ onSelectStudy, setView, onEditStudy }) => {
                                             }}
                                         >
                                             <img
-                                                src="/src/assets/iconDownload.svg"
+                                                src="/assets/iconDownload.svg"
                                                 alt="Descargar"
                                                 style={{
                                                     verticalAlign: 'middle',

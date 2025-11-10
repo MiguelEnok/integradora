@@ -187,7 +187,7 @@ function App() {
                 cursor: 'pointer',
               }}>
               <img
-                src="/src/assets/iconReload.svg"
+                src="/assets/iconReload.svg"
                 alt="Subir Archivo"
                 style={{
                   verticalAlign: 'middle',
@@ -198,7 +198,7 @@ function App() {
                   filter: 'invert(1)',
                 }}
               />
-              Recargar Visor
+              Recargar / limpiar Visor
             </button>
 
             <DwvComponent

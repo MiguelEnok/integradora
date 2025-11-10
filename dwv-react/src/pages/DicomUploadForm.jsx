@@ -160,7 +160,7 @@ const DicomUploaderPage = ({ setView }) => {
               />
               <p style={{ color: PRIMARY_DARK, fontSize: '30px', margin: '0 0 10px 0' }}>
                 <img
-                  src="/src/assets/iconCloud.svg"
+                  src="/assets/iconCloud.svg"
                   alt="Subir Archivo"
                   style={{
                     verticalAlign: 'middle',
