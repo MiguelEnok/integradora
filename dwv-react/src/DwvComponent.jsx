@@ -11,7 +11,7 @@ import {
   AppBar,
   Dialog,
   Slide,
-  Toolbar
+  Toolbar,
 } from '@mui/material';
 
 import {
@@ -485,7 +485,7 @@ class DwvComponent extends React.Component {
       // check content
       if (box.innerHTML === '') {
         const p = document.createElement('p');
-        p.appendChild(document.createTextNode('Drag and drop data here or '));
+        p.appendChild(document.createTextNode('Arrastra tu archivo aquí o '));
         // input file
         const input = document.createElement('input');
         input.onchange = this.onInputFile;
@@ -496,7 +496,7 @@ class DwvComponent extends React.Component {
         const label = document.createElement('label');
         label.htmlFor = 'input-file';
         const link = document.createElement('a');
-        link.appendChild(document.createTextNode('click here'));
+        link.appendChild(document.createTextNode('haz clic para seleccionar'));
         link.id = 'input-file-link';
         label.appendChild(link);
         p.appendChild(input);

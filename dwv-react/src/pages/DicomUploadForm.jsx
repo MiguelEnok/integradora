@@ -1,32 +1,24 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 
-const DicomFormPage = ({ studyToEdit, onComplete, setView }) => {
-
-  // Colores y estilos
-  const PRIMARY_COLOR = '#4a90a4'; // Color de Guardar Cambios
-  const CANCEL_COLOR = '#dc3545';
-  const CARD_BG = 'white';
-  const BORDER_COLOR = '#e0e0e0';
-  const PRIMARY_DARK = '#115e67';
+const DicomUploaderPage = ({ setView }) => {
+  // Colores y estilos basados en el diseño
+  const PRIMARY_COLOR = '#4a90a4'; // Color del botón "Guardar estudio" (verde/azul suave)
+  const CANCEL_COLOR = '#dc3545'; // Rojo del botón "Cancelar"
   const TEXT_PRIMARY = '#333';
+  const CARD_BG = 'white';
+  const BG_COLOR = '#f4f7f9';
+  const BORDER_COLOR = '#e0e0e0';
+  const PRIMARY_DARK = '#115e67'; // Color de logo/texto principal
 
-
-  const [id, setId] = useState(studyToEdit ? studyToEdit.id : null);
-  const [name, setName] = useState(studyToEdit ? studyToEdit.name : '');
-  const [description, setDescription] = useState(studyToEdit ? studyToEdit.description : '');
-  const [dicomFile, setDicomFile] = useState(null); // Nuevo archivo a subir
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [dicomFile, setDicomFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
-  const [oldStoragePath] = useState(studyToEdit ? studyToEdit.storage_path : null);
+  const [uploadMessage, setUploadMessage] = useState('');
   const [isDragging, setIsDragging] = useState(false); // Estado para drag and drop
 
-  if (!studyToEdit) {
-    return <p style={{ color: CANCEL_COLOR }}>Error: No se ha seleccionado un estudio para editar.</p>;
-  }
-
-  
   const handleFileChange = (e) => {
     const files = e.target.files || (e.dataTransfer && e.dataTransfer.files);
     if (files && files[0]) {
@@ -39,7 +31,7 @@ const DicomFormPage = ({ studyToEdit, onComplete, setView }) => {
         setDicomFile(null);
       }
     }
-    setIsDragging(false);
+    setIsDragging(false); // Resetear después de soltar/seleccionar
   };
 
   const handleDrop = (e) => {
@@ -48,61 +40,68 @@ const DicomFormPage = ({ studyToEdit, onComplete, setView }) => {
     handleFileChange(e);
   };
 
-  const handleUpdate = async () => {
-    let newStoragePath = oldStoragePath;
-    let newFileName = studyToEdit.file_name;
-
-    if (dicomFile) {
-      setMessage('Subiendo nueva imagen y eliminando la anterior...');
-      newStoragePath = `dicom_files/${name.replace(/\s/g, '_')}-${Date.now()}/${dicomFile.name}`;
-      newFileName = dicomFile.name;
-
-      const { error: storageUploadError } = await supabase.storage
-        .from('studies')
-        .upload(newStoragePath, dicomFile, { cacheControl: '3600', upsert: false });
-
-      if (storageUploadError) { throw new Error(`Error al subir el nuevo archivo: ${storageUploadError.message}`); }
-
-      if (oldStoragePath && oldStoragePath !== newStoragePath) {
-        const { error: storageDeleteError } = await supabase.storage.from('studies').remove([oldStoragePath]);
-        if (storageDeleteError) { console.warn("Advertencia: No se pudo eliminar el archivo antiguo:", storageDeleteError); }
-      }
-    }
-
-    setMessage('Actualizando metadatos en la base de datos...');
-    const { error: dbError } = await supabase
-      .from('dicom_studies')
-      .update({ name: name, description: description, storage_path: newStoragePath, file_name: newFileName })
-      .eq('id', id);
-
-    if (dbError) { throw new Error(`Error al actualizar la base de datos: ${dbError.message}`); }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    if (!name || !description) { setError('Por favor, completa Nombre y Descripción.'); return; }
+    if (!name || !description || !dicomFile) {
+      setError('Por favor, completa todos los campos y sube un archivo.');
+      return;
+    }
+
     setLoading(true);
-    setMessage('Iniciando proceso de actualización...');
+    setError('');
+    setUploadMessage('Iniciando subida...');
 
     try {
-      await handleUpdate();
-      setMessage('¡Estudio actualizado con éxito!');
-      setTimeout(onComplete, 1500);
+      const storagePath = `dicom_files/${name.replace(/\s/g, '_')}-${Date.now()}/${dicomFile.name}`;
+
+      const { data: storageData, error: storageError } = await supabase.storage
+        .from('studies')
+        .upload(storagePath, dicomFile, { cacheControl: '3600', upsert: false });
+
+      if (storageError) { throw storageError; }
+
+      setUploadMessage('Archivo DICOM subido a Storage. Guardando metadatos...');
+
+      const { data: dbData, error: dbError } = await supabase
+        .from('dicom_studies')
+        .insert([{ name: name, description: description, storage_path: storagePath, file_name: dicomFile.name }])
+        .select();
+
+      if (dbError) { throw dbError; }
+
+      setName('');
+      setDescription('');
+      setDicomFile(null);
+      setUploadMessage('¡Estudio DICOM agregado con éxito!');
     } catch (err) {
       console.error("Error completo:", err);
-      setError(`Error: ${err.message || 'Error desconocido al actualizar el estudio.'}`);
-      setMessage('');
+      setError(`Error: ${err.message || 'Error desconocido al subir el estudio.'}`);
+      setUploadMessage('');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancel = () => { setView('list'); onComplete(); };
+  const handleCancel = () => {
+    setView('list');
+  };
 
-  // Estilos internos
-  const inputStyle = { padding: '12px 15px', border: `1px solid ${BORDER_COLOR}`, borderRadius: '6px', width: '100%', fontSize: '15px' };
-  const labelStyle = { display: 'block', marginBottom: '10px', fontSize: '15px', fontWeight: '600', color: TEXT_PRIMARY };
+  const inputStyle = {
+    padding: '12px 15px',
+    border: `1px solid ${BORDER_COLOR}`,
+    borderRadius: '6px',
+    width: '100%',
+    fontSize: '15px',
+  };
+
+  const labelStyle = {
+    display: 'block',
+    marginBottom: '10px',
+    fontSize: '15px',
+    fontWeight: '600',
+    color: TEXT_PRIMARY,
+  };
+
   const dragZoneStyle = {
     border: `2px dashed ${isDragging ? PRIMARY_DARK : BORDER_COLOR}`,
     backgroundColor: isDragging ? '#f0f8ff' : '#fafafa',
@@ -114,11 +113,13 @@ const DicomFormPage = ({ studyToEdit, onComplete, setView }) => {
     position: 'relative',
   };
 
+
   return (
     <div style={{ padding: '0', maxWidth: '700px', margin: 'auto' }}>
 
-      <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: TEXT_PRIMARY, marginBottom: '30px' }}>
-        {`Editar Estudio: ${studyToEdit.name}`}
+      {/* Título Principal */}
+      <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#333', marginBottom: '30px' }}>
+        Agregar Nuevo Estudio DICOM
       </h1>
 
       <div style={{ background: CARD_BG, borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.05)', padding: '30px' }}>
@@ -140,18 +141,20 @@ const DicomFormPage = ({ studyToEdit, onComplete, setView }) => {
 
           {/* Archivo DICOM (Drop Zone) */}
           <div>
-            <label style={labelStyle}>Sobrescribir Archivo DICOM (Opcional)</label>
+            <label style={labelStyle}>Archivo DICOM</label>
             <div
               style={dragZoneStyle}
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
-              onClick={() => document.getElementById('dicom-file-update').click()}
+              onClick={() => document.getElementById('dicom-file-upload').click()}
             >
               <input
                 type="file"
-                id="dicom-file-update"
+                id="dicom-file-upload"
+                name="dicomFile"
                 onChange={handleFileChange}
+                required
                 disabled={loading}
                 style={{ display: 'none' }}
               />
@@ -168,34 +171,34 @@ const DicomFormPage = ({ studyToEdit, onComplete, setView }) => {
                 />
               </p>
               <p style={{ color: '#666', fontSize: '15px', margin: '0' }}>
-                Arrastra el nuevo archivo aquí <br /> o haz clic para sobrescribir (Actualmente: {studyToEdit.file_name})
+                Arrastra tu archivo aquí <br /> o haz clic para seleccionar
               </p>
-              {dicomFile && <p style={{ color: PRIMARY_DARK, marginTop: '15px', fontWeight: 'bold' }}>{dicomFile.name} será el nuevo archivo.</p>}
+              {dicomFile && <p style={{ color: PRIMARY_DARK, marginTop: '15px', fontWeight: 'bold' }}>{dicomFile.name} seleccionado.</p>}
             </div>
           </div>
 
           {/* Mensajes */}
-          {message && <p style={{ color: PRIMARY_DARK, textAlign: 'center' }}>{message}</p>}
+          {uploadMessage && <p style={{ color: PRIMARY_DARK, textAlign: 'center' }}>{uploadMessage}</p>}
           {error && <p style={{ color: CANCEL_COLOR, textAlign: 'center' }}>Error: {error}</p>}
 
           {/* Botones de Envío */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '10px' }}>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !dicomFile}
               style={{
                 padding: '12px 25px',
-                cursor: loading ? 'not-allowed' : 'pointer',
+                cursor: loading || !dicomFile ? 'not-allowed' : 'pointer',
                 background: PRIMARY_COLOR,
                 color: 'white',
                 border: 'none',
                 borderRadius: '6px',
                 fontWeight: '600',
                 transition: 'background-color 0.2s',
-                opacity: loading ? 0.7 : 1,
+                opacity: loading || !dicomFile ? 0.7 : 1,
               }}
             >
-              {loading ? 'Procesando...' : 'Guardar Cambios'}
+              {loading ? 'Procesando...' : 'Guardar estudio'}
             </button>
 
             <button
@@ -222,4 +225,4 @@ const DicomFormPage = ({ studyToEdit, onComplete, setView }) => {
   );
 };
 
-export default DicomFormPage;
+export default DicomUploaderPage;
