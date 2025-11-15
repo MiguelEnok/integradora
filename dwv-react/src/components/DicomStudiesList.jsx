@@ -206,7 +206,7 @@ const DicomStudiesList = ({ onSelectStudy, setView, onEditStudy }) => {
                         style={{ padding: '10px 12px', background: 'transparent', color: '#666', border: 'none', cursor: 'pointer' }}
                     >
                         <img
-                            src="/src/assets/iconSearch.svg"
+                            src="/assets/iconSearch.svg"
                             alt="Buscar"
                             style={{
                                 verticalAlign: 'middle',
